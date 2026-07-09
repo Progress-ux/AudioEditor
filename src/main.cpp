@@ -14,7 +14,11 @@ int main(int argc, char *argv[])
 
     for (const auto &entry : std::filesystem::directory_iterator("."))
     {
-        entries.push_back(entry.path().filename());
+        std::string filename = entry.path().filename();
+        if (filename.ends_with(".mp3"))
+        {
+            entries.push_back(entry.path().filename());
+        }
     }
 
     auto radiobox = ftxui::Menu(&entries, &selected);
