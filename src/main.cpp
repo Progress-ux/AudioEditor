@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -11,10 +12,11 @@ int main(int argc, char *argv[])
     std::vector<std::string> entries;
     int selected = 0;
 
-    for (int i = 0; i < 30; ++i)
+    for (const auto &entry : std::filesystem::directory_iterator("."))
     {
-        entries.push_back("Entry " + std::to_string(i));
+        entries.push_back(entry.path().filename());
     }
+
     auto radiobox = ftxui::Menu(&entries, &selected);
     auto renderer = ftxui::Renderer(
         radiobox,
