@@ -25,21 +25,19 @@ int main(int argc, char *argv[])
 
     auto menu = ftxui::Menu(&entries, &selected);
 
-    auto component =
-        ftxui::CatchEvent(menu,
-                          [&](ftxui::Event event)
-                          {
-                              if (event == ftxui::Event::Character('q'))
-                              {
-                                  system("clear");
-                                  exit(0);
-                                  return true;
-                              }
-                              return false;
-                          });
+    auto component = ftxui::CatchEvent(menu,
+        [&](ftxui::Event event)
+        {
+            if (event == ftxui::Event::Character('q'))
+            {
+                system("clear");
+                exit(0);
+                return true;
+            }
+            return false;
+        });
 
-    auto renderer = ftxui::Renderer(
-        component,
+    auto renderer = ftxui::Renderer(component,
         [&]
         {
             return component->Render() | ftxui::vscroll_indicator |
