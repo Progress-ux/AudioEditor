@@ -1,4 +1,6 @@
+#include <cstdlib>
 #include <filesystem>
+#include <ftxui/component/event.hpp>
 #include <string>
 #include <vector>
 
@@ -21,12 +23,26 @@ int main(int argc, char *argv[])
         }
     }
 
-    auto radiobox = ftxui::Menu(&entries, &selected);
+    auto menu = ftxui::Menu(&entries, &selected);
+
+    auto component =
+        ftxui::CatchEvent(menu,
+                          [&](ftxui::Event event)
+                          {
+                              if (event == ftxui::Event::Character('q'))
+                              {
+                                  system("clear");
+                                  exit(0);
+                                  return true;
+                              }
+                              return false;
+                          });
+
     auto renderer = ftxui::Renderer(
-        radiobox,
+        component,
         [&]
         {
-            return radiobox->Render() | ftxui::vscroll_indicator |
+            return component->Render() | ftxui::vscroll_indicator |
                    ftxui::frame |
                    ftxui::size(ftxui::HEIGHT, ftxui::LESS_THAN, 10) |
                    ftxui::border;
