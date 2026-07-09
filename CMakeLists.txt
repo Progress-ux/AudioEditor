@@ -4,6 +4,7 @@ project(AudioEditor LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(FetchContent)
 FetchContent_Declare(ftxui
@@ -17,9 +18,20 @@ pkg_check_modules(TAGLIB REQUIRED taglib)
 
 add_executable(editor
     src/main.cpp
+
+    src/app/App.cpp
+
+    src/screens/EditorScreen.cpp
+    src/screens/FileListScreen.cpp
+
+    src/services/MetadataService.cpp
+    src/services/FileScanner.cpp
 )
 
-target_link_directories(editor PRIVATE ${TAGLIB_INCLUDE_DIRS})
+target_include_directories(editor PRIVATE
+    src
+    ${TAGLIB_INCLUDE_DIRS}
+)
 
 target_link_libraries(editor PRIVATE
     ftxui::ftxui
