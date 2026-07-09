@@ -1,0 +1,9 @@
+BasedOnStyle: LLVM
+BreakBeforeBraces: Allman
+AllowShortBlocksOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+
+# Настройка отступов в 4 пробела
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
