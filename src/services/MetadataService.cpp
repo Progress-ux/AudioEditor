@@ -20,7 +20,7 @@ AudioFile MetadataService::Load(const std::filesystem::path& path)
     }
 
     TagLib::FileRef f(path.c_str());
-    if (f.isNull())
+    if (f.isNull() || !f.file() || f.file()->properties().isEmpty())
     {
         throw TagLibException("Cannot open file: " + path.string());
     }
