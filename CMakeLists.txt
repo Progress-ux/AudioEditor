@@ -37,3 +37,5 @@ target_link_libraries(editor PRIVATE
     ftxui::ftxui
     ${TAGLIB_LIBRARIES}
 )
+
+install(TARGETS editor RUNTIME DESTINATION bin)
