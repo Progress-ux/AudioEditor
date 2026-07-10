@@ -1,0 +1,116 @@
+#include <catch2/catch_test_macros.hpp>
+
+#include "exceptions/TagLibException.hpp"
+#include "services/MetadataService.hpp"
+
+#include <filesystem>
+#include <fstream>
+
+namespace fs = std::filesystem;
+
+void create_empty_file(const fs::path& path)
+{
+    std::ofstream ofs(path);
+}
+
+TEST_CASE("MetadataService: Обработка ошибок (Sad Path)", "[metadata][errors]") 
+{
+    MetadataService service;
+
+    SECTION("Загрузка несуществующего файла должна вызвать исключение") 
+    {
+        fs::path non_existent = "this_file_does_not_exist.mp3";
+
+        REQUIRE_THROWS_AS(service.Load(non_existent), TagLibException);
+    }
+
+    SECTION("Загрузка пустого файла должна вызывать исключение") 
+    {
+        fs::path empty_file = "empty_test_file.mp3";
+        create_empty_file(empty_file);
+
+        REQUIRE_THROWS_AS(service.Load(empty_file), TagLibException);
+
+        fs::remove(empty_file);
+    }
+
+}
+
+TEST_CASE("MetadataService: Чтение и Запись (Happy Path)", "[metadata][io]") 
+{
+    MetadataService service;
+
+    SECTION("Файл существует, наполнен мусором, но не является аудио-форматом")
+    {
+        fs::path fake_audio = "garbage.mp3";
+        std::ofstream ofs(fake_audio);
+        ofs << "Simply some text garbage inside file to make it non-empty";
+        ofs.close();
+
+        REQUIRE_THROWS_AS(service.Load(fake_audio), TagLibException);
+
+        fs::remove(fake_audio);
+    }
+}
+
+TEST_CASE("MetadataService: Сохранение тегов (Save)", "[metadata][save]")
+{
+    MetadataService service;
+
+    fs::path test_file = "temp_test_save.mp3";
+
+    unsigned char minimal_mp3[] = {
+        0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xfb, 
+        0x10, 0x44, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x58, 0x69, 0x6e, 0x67, 
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xc0, 
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4c, 0x41, 0x4d, 0x45, 0x33, 
+        0x2e, 0x31, 0x30, 0x30, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 
+        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 
+        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 
+        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 
+        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 
+        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 
+        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 
+        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 
+        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 
+        0x55, 0x55, 0x55, 0x55, 0xff, 0xfb, 0x10, 0x44, 0x00, 0x00, 0x00, 0x00, 
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+
+    std::ofstream ofs(test_file, std::ios::binary);
+    ofs.write(reinterpret_cast<const char*>(minimal_mp3), sizeof(minimal_mp3));
+    ofs.close();
+
+    SECTION("Успешная запись и последующее чтение тегов")
+    {
+        AudioFile file(test_file);
+
+        file.title = "test_title";
+        file.artist = "test_artist";
+        file.album = "test_album";
+        file.comment = "test_comment";
+        file.date = "2026";
+        file.genre = "test_genre";
+        file.track_number = "1";
+
+        service.Save(file);
+
+        auto checked_file = service.Load(test_file);
+
+        REQUIRE(checked_file.title == "test_title");
+        REQUIRE(checked_file.artist == "test_artist");
+        REQUIRE(checked_file.album == "test_album");
+        REQUIRE(checked_file.comment == "test_comment");
+        REQUIRE(checked_file.date == "2026");
+        REQUIRE(checked_file.genre == "test_genre");
+        REQUIRE(checked_file.track_number == "1");
+
+    }
+
+    if (fs::exists(test_file))
+    {
+        fs::remove(test_file);
+    }
+}
