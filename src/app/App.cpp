@@ -2,13 +2,26 @@
 #include "screens/EditorScreen.hpp"
 #include "screens/FileListScreen.hpp"
 
+#include <exception>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 
+#include <iostream>
+
 void App::Run()
 {
-    auto files = scanner_.Scan(".");
+    std::vector<std::filesystem::path> files;
+    try 
+    {
+        files = scanner_.Scan(".");
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Scan error: " << e.what() << "\n";
+        return;
+    }
+
     for (const auto& file : files)
     {
         try 
