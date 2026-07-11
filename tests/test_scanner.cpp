@@ -6,6 +6,34 @@
 
 namespace fs = std::filesystem;
 
+class SandboxFixture
+{
+private:
+    fs::path path_;
+
+    void clean()
+    {
+        if (fs::exists(path_))
+        {
+            fs::remove_all(path_);
+        }
+    }
+
+public:
+    SandboxFixture(const fs::path& path = "test_sandbox") : path_(path)
+    {
+        clean();
+        fs::create_directory(path);
+    }
+
+    ~SandboxFixture()
+    {
+        clean();
+    }
+
+    const fs::path& path() const { return path_; }
+};
+
 void create_dummy_file(const fs::path& path)
 {
     std::ofstream ofs(path);
@@ -14,38 +42,36 @@ void create_dummy_file(const fs::path& path)
  TEST_CASE("FileScanner: Сканирование директории", "[scanner]")
 {
     FileScanner scanner;
-    fs::path sandbox = "test_sandbox";
 
-    if (fs::exists(sandbox))
+    SECTION("Сканирование несуществующей папки вызывает исключение")
     {
-        fs::remove_all(sandbox);
+        fs::path not_existing = "definitely_not_exists_sandbox";
+        REQUIRE_THROWS_AS(scanner.Scan(not_existing), fs::filesystem_error);
     }
-    fs::create_directory(sandbox);
 
     SECTION("Сканирование пустой папки должно возвращать пустой вектор")
     {
-        auto result = scanner.Scan(sandbox);
+        SandboxFixture sandbox;
+        auto result = scanner.Scan(sandbox.path());
 
         REQUIRE(result.empty());
     }
 
     SECTION("Сканирование должно находить только файлы .mp3")
     {
+        SandboxFixture sandbox;
+
         // Правильные файлы
-        create_dummy_file(sandbox / "song1.mp3");
-        create_dummy_file(sandbox / "song2.mp3");
+        create_dummy_file(sandbox.path() / "song1.mp3");
+        create_dummy_file(sandbox.path() / "song2.mp3");
 
         // Сканер должен проигнорировать
-        create_dummy_file(sandbox / "image.jpg");
-        create_dummy_file(sandbox / "readme.txt");
-        create_dummy_file(sandbox / "mp3_in_name_but_txt.mp3.txt");
+        create_dummy_file(sandbox.path() / "image.jpg");
+        create_dummy_file(sandbox.path() / "readme.txt");
+        create_dummy_file(sandbox.path() / "mp3_in_name_but_txt.mp3.txt");
 
-        auto result = scanner.Scan(sandbox);
-
+        auto result = scanner.Scan(sandbox.path());
 
         REQUIRE(result.size() == 2);
     }
-
-    fs::remove_all(sandbox);
-    
 }
