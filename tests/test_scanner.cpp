@@ -39,17 +39,17 @@ void create_dummy_file(const fs::path& path)
     std::ofstream ofs(path);
 }
 
- TEST_CASE("FileScanner: Сканирование директории", "[scanner]")
+TEST_CASE("FileScanner: Directory Scanning", "[scanner]")
 {
     FileScanner scanner;
 
-    SECTION("Сканирование несуществующей папки вызывает исключение")
+    SECTION("Scanning a non-existent directory throws an exception")
     {
         fs::path not_existing = "definitely_not_exists_sandbox";
         REQUIRE_THROWS_AS(scanner.Scan(not_existing), fs::filesystem_error);
     }
 
-    SECTION("Сканирование пустой папки должно возвращать пустой вектор")
+    SECTION("Scanning an empty directory should return an empty vector")
     {
         SandboxFixture sandbox;
         auto result = scanner.Scan(sandbox.path());
@@ -57,15 +57,15 @@ void create_dummy_file(const fs::path& path)
         REQUIRE(result.empty());
     }
 
-    SECTION("Сканирование должно находить только файлы .mp3")
+    SECTION("Scanning should find only .mp3 files")
     {
         SandboxFixture sandbox;
 
-        // Правильные файлы
+        // Valid files
         create_dummy_file(sandbox.path() / "song1.mp3");
         create_dummy_file(sandbox.path() / "song2.mp3");
 
-        // Сканер должен проигнорировать
+        // Scanner should ignore these
         create_dummy_file(sandbox.path() / "image.jpg");
         create_dummy_file(sandbox.path() / "readme.txt");
         create_dummy_file(sandbox.path() / "mp3_in_name_but_txt.mp3.txt");

@@ -13,18 +13,18 @@ void create_empty_file(const fs::path& path)
     std::ofstream ofs(path);
 }
 
-TEST_CASE("MetadataService: Обработка ошибок (Sad Path)", "[metadata][errors]") 
+TEST_CASE("MetadataService: Error Handling (Sad Path)", "[metadata][errors]") 
 {
     MetadataService service;
 
-    SECTION("Загрузка несуществующего файла должна вызвать исключение") 
+    SECTION("Loading a non-existent file should throw an exception") 
     {
         fs::path non_existent = "this_file_does_not_exist.mp3";
 
         REQUIRE_THROWS_AS(service.Load(non_existent), TagLibException);
     }
 
-    SECTION("Загрузка пустого файла должна вызывать исключение") 
+    SECTION("Loading an empty file should throw an exception") 
     {
         fs::path empty_file = "empty_test_file.mp3";
         create_empty_file(empty_file);
@@ -36,11 +36,11 @@ TEST_CASE("MetadataService: Обработка ошибок (Sad Path)", "[metad
 
 }
 
-TEST_CASE("MetadataService: Чтение и Запись (Happy Path)", "[metadata][io]") 
+TEST_CASE("MetadataService: Reading and Writing (Happy Path)", "[metadata][io]") 
 {
     MetadataService service;
 
-    SECTION("Файл существует, наполнен мусором, но не является аудио-форматом")
+    SECTION("File exists, filled with garbage, but is not an audio format")
     {
         fs::path fake_audio = "garbage.mp3";
         std::ofstream ofs(fake_audio);
@@ -53,7 +53,7 @@ TEST_CASE("MetadataService: Чтение и Запись (Happy Path)", "[metada
     }
 }
 
-TEST_CASE("MetadataService: Сохранение тегов (Save)", "[metadata][save]")
+TEST_CASE("MetadataService: Saving Tags (Save)", "[metadata][save]")
 {
     MetadataService service;
 
@@ -83,7 +83,7 @@ TEST_CASE("MetadataService: Сохранение тегов (Save)", "[metadata]
     ofs.write(reinterpret_cast<const char*>(minimal_mp3), sizeof(minimal_mp3));
     ofs.close();
 
-    SECTION("Успешная запись и последующее чтение тегов")
+    SECTION("Successful writing and subsequent reading of tags")
     {
         AudioFile file(test_file);
 
