@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.15)
 
 project(AudioEditor LANGUAGES CXX)
 
+if(WIN32)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -31,8 +35,13 @@ FetchContent_Declare(CLI11
 message(STATUS "[FetchContent] Fetching and making dependencies available...")
 FetchContent_MakeAvailable(ftxui Catch2 CLI11)
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(TAGLIB REQUIRED taglib)
+if(WIN32)
+    find_package(ZLIB REQUIRED)
+    find_package(taglib CONFIG REQUIRED)
+else()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(TAGLIB REQUIRED taglib)
+endif()
 
 message(STATUS "[PkgConfig] TagLib library found!")
 message(STATUS "  - Version:  ${TAGLIB_VERSION}")
@@ -44,7 +53,12 @@ add_library(editor_core
     src/services/FileScanner.cpp
 )
 target_include_directories(editor_core PUBLIC src)
-target_link_libraries(editor_core PUBLIC ${TAGLIB_LIBRARIES})
+
+if(WIN32)
+    target_link_libraries(editor_core PUBLIC TagLib::tag)
+else()
+    target_link_libraries(editor_core PUBLIC ${TAGLIB_LIBRARIES})
+endif()
 
 add_executable(editor
     src/main.cpp

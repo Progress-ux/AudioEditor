@@ -1,0 +1,49 @@
+name: Build Release for Windows
+
+on:
+  push:
+    branches:
+      - test-ci
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest]
+        include: 
+          - os: windows-latest
+            artifact_name: editor.exe
+
+    runs-on: ${{matrix.os}}
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'vcpkg.json'
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure CMake
+        shell: pwsh
+        run: |
+          cmake -B build -G Ninja `
+            -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static `
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Application 
+        shell: pwsh
+        run: |
+          cmake --build build 
+
+      - name: Run Unit Tests
+        shell: pwsh
+        run: ctest --test-dir build --output-on-failure
+     
