@@ -4,6 +4,7 @@
 #include "services/MetadataService.hpp"
 #include "AppState.hpp"
 
+#include <filesystem>
 #include <ftxui/component/screen_interactive.hpp>
 
 class App 
@@ -13,11 +14,12 @@ private:
     AppState state_;
     MetadataService metadata_;
     FileScanner scanner_;
+    std::filesystem::path folder_;
+
+    std::filesystem::path ExpandUser(std::string);
 
 public:
-    App()
-        : screen_(ftxui::ScreenInteractive::Fullscreen())
-    {}
+    App(std::string&);
 
     void Run();
 };

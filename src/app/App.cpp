@@ -2,19 +2,53 @@
 #include "screens/EditorScreen.hpp"
 #include "screens/FileListScreen.hpp"
 
+#include <cstdlib>
 #include <exception>
+#include <filesystem>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/event.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 
 #include <iostream>
+#include <utility>
+
+std::filesystem::path App::ExpandUser(std::string path)
+{
+    if (path.starts_with("~"))
+    {
+        if (const char* home = std::getenv("HOME"))
+            path.replace(0, 1, home);
+    }
+    return path;
+}
+
+App::App(std::string& path)
+    : screen_(ftxui::ScreenInteractive::Fullscreen())
+{
+    if(path.empty())
+    {
+        folder_ = ".";
+        return;
+    }
+
+    std::filesystem::path targetPath(ExpandUser(path));
+    if (std::filesystem::exists(targetPath) && std::filesystem::is_directory(targetPath))
+    {
+        folder_ = std::move(targetPath);
+    }
+    else 
+    {
+        folder_ = ".";
+    }
+}
+
 
 void App::Run()
 {
     std::vector<std::filesystem::path> files;
     try 
     {
-        files = scanner_.Scan(".");
+        files = scanner_.Scan(folder_);
     }
     catch (const std::exception& e)
     {
