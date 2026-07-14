@@ -1,0 +1,79 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows 
+    runs-on: windows-latest
+      
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'vcpkg.json'
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure CMake
+        shell: pwsh
+        run: |
+          cmake -B build -G Ninja `
+            -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static `
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Application 
+        shell: pwsh
+        run: |
+          cmake --build build 
+
+      - name: Run Unit Tests
+        shell: pwsh
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package
+        shell: pwsh
+        run: |
+          mkdir package 
+          copy build/editor.exe package/
+
+          Compress-Archive `
+            -Path package/* `
+            -DestinationPath AudioEditor-windows-x64.zip
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: AudioEditor-windows-x64.zip
+  
+  release:
+    name: Create GitHub Release
+    needs:
+      - build-windows
+
+    runs-on: ubuntu-latest
+
+    steps: 
+      - name: Download Windows Artifact 
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-release
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with: 
+          files: |
+            AudioEditor-windows-x64.zip
+        env:
+          GITUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
