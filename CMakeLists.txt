@@ -32,8 +32,13 @@ FetchContent_Declare(CLI11
     GIT_TAG v2.6.0
 )
 
+FetchContent_Declare(spdlog 
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.12.0
+)
+
 message(STATUS "[FetchContent] Fetching and making dependencies available...")
-FetchContent_MakeAvailable(ftxui Catch2 CLI11)
+FetchContent_MakeAvailable(ftxui Catch2 CLI11 spdlog)
 
 if(WIN32)
     find_package(ZLIB REQUIRED)
@@ -53,6 +58,8 @@ add_library(editor_core
     src/services/FileScanner.cpp
 )
 target_include_directories(editor_core PUBLIC src)
+
+target_link_libraries(editor_core PUBLIC spdlog::spdlog_header_only)
 
 if(WIN32)
     target_link_libraries(editor_core PUBLIC TagLib::tag)
