@@ -1,8 +1,14 @@
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
+
+#include "core/logger.hpp"
 #include "CLI/CLI.hpp"
 #include "app/App.hpp"
 
 int main(int argc, char *argv[])
 {
+    Logger::init();
+    LOG_INFO("Program started");
+
     CLI::App parser { "Audio Editor Command Line Interface" };
 
     std::string path;
@@ -12,5 +18,7 @@ int main(int argc, char *argv[])
 
     App app(path);
     app.Run();
+
+    Logger::shutdown();
     return 0;
 }
