@@ -1,5 +1,8 @@
 #include "EditorScreen.hpp"
 
+#include "core/logger.hpp"
+#include <exception>
+
 #include "ftxui/dom/elements.hpp"
 #include <ftxui/component/component.hpp>
 #include <ftxui/dom/deprecated.hpp>
@@ -23,8 +26,9 @@ EditorScreen::EditorScreen(AppState& state, MetadataService& metadata)
             state_.files[state_.selectedFile] = state_.current_file;
             state_.changeScreen(AppScreen::FileList);
         }
-        catch(...)
+        catch(std::exception& e)
         {
+            LOG_ERROR("Save error: {}", e.what());
         }
     });
     cancel_button_ = ftxui::Button("Cancel", [&] {
