@@ -1,4 +1,5 @@
 #include "App.hpp"
+#include "core/logger.hpp"
 #include "screens/EditorScreen.hpp"
 #include "screens/FileListScreen.hpp"
 
@@ -53,6 +54,7 @@ void App::Run()
     catch (const std::exception& e)
     {
         std::cerr << "Scan error: " << e.what() << "\n";
+        LOG_ERROR("Scan error: {}", e.what());
         return;
     }
 
@@ -63,8 +65,9 @@ void App::Run()
             AudioFile audio_file = metadata_.Load(file);
             state_.files.push_back(audio_file);
         }
-        catch (...)
+        catch (const std::exception& e)
         {
+            LOG_ERROR("Skip file with error: {}", e.what());
             continue;
         }
     }
