@@ -1,5 +1,6 @@
 #pragma once
 
+#include "screens/EditorScreen.hpp"
 #include "services/FileScanner.hpp"
 #include "services/MetadataService.hpp"
 #include "AppState.hpp"
@@ -14,6 +15,7 @@ private:
     AppState state_;
     MetadataService metadata_;
     FileScanner scanner_;
+    FileFilter filter_;
     std::filesystem::path folder_;
 
     std::filesystem::path ExpandUser(std::string);

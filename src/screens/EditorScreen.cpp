@@ -1,14 +1,16 @@
 #include "EditorScreen.hpp"
 
 #include "core/logger.hpp"
+#include <algorithm>
 #include <exception>
 
 #include "ftxui/dom/elements.hpp"
 #include <ftxui/component/component.hpp>
+#include <ftxui/component/event.hpp>
 #include <ftxui/dom/deprecated.hpp>
 #include <ftxui/dom/elements.hpp>
 
-EditorScreen::EditorScreen(AppState& state, MetadataService& metadata)
+EditorScreen::EditorScreen(AppState& state, MetadataService& metadata, FileFilter& filter)
     : state_(state), metadata_(metadata)
 {
     title_input_ = ftxui::Input(&state_.current_file.title, "Title");
@@ -23,7 +25,22 @@ EditorScreen::EditorScreen(AppState& state, MetadataService& metadata)
         try 
         {
             metadata_.Save(state_.current_file);
-            state_.files[state_.selectedFile] = state_.current_file;
+
+            auto it = std::find_if(
+                state_.all_files.begin(),
+                state_.all_files.end(),
+                [&](const AudioFile& file)
+                {
+                    return file.path == state_.current_file.path;
+                }
+            );
+
+            if (it != state_.all_files.end())
+            {
+                *it = state_.current_file;
+            }
+            state_.visible_files = filter.Apply(state_.all_files, state_.search_query);
+
             state_.changeScreen(AppScreen::FileList);
         }
         catch(std::exception& e)
@@ -46,7 +63,16 @@ EditorScreen::EditorScreen(AppState& state, MetadataService& metadata)
         ftxui::Container::Horizontal({ save_button_, cancel_button_ })
     });
 
-    component_ = ftxui::Renderer(container_, [&] {
+    auto editor_handler = ftxui::CatchEvent(container_, [this](ftxui::Event event) {
+        if (event == ftxui::Event::Escape)
+        {
+            state_.changeScreen(AppScreen::FileList);
+            return true;
+        }
+        return false;
+    });
+
+    component_ = ftxui::Renderer(editor_handler, [&] {
         return ftxui::vbox({
             ftxui::text("Edit file: " + state_.current_file.path.filename().string()) | ftxui::bold,
             ftxui::separator(),
@@ -67,6 +93,9 @@ EditorScreen::EditorScreen(AppState& state, MetadataService& metadata)
             }) | ftxui::center
         }) | ftxui::border;
     });
+
+    
+
 }
 
 ftxui::Component EditorScreen::GetComponent()

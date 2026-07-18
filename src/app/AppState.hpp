@@ -12,8 +12,10 @@ enum class AppScreen
 
 struct AppState
 {
-    std::vector<AudioFile> files;
+    std::vector<AudioFile> all_files;
+    std::vector<AudioFile> visible_files;
     AudioFile current_file;
+    std::string search_query;
 
     int selectedFile = 0;
 

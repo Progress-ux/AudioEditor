@@ -63,7 +63,7 @@ void App::Run()
         try 
         {
             AudioFile audio_file = metadata_.Load(file);
-            state_.files.push_back(audio_file);
+            state_.all_files.push_back(audio_file);
         }
         catch (const std::exception& e)
         {
@@ -71,11 +71,12 @@ void App::Run()
             continue;
         }
     }
+    state_.visible_files = state_.all_files;
 
-    FileListScreen list_screen(state_);
+    FileListScreen list_screen(state_, filter_, screen_.ExitLoopClosure());
     auto list_component = list_screen.GetComponent();
 
-    EditorScreen editor_screen(state_, metadata_);
+    EditorScreen editor_screen(state_, metadata_, filter_);
     auto editor_component = editor_screen.GetComponent();
 
     auto tabs = ftxui::Container::Tab({
@@ -83,19 +84,5 @@ void App::Run()
         editor_component
     }, &state_.current_tab);
 
-    auto root = ftxui::CatchEvent(tabs, [&](ftxui::Event event) {
-        if (event == ftxui::Event::Character('q'))
-        {
-            screen_.ExitLoopClosure()();
-            return true;
-        }
-        if (event == ftxui::Event::Escape && state_.current_tab == 1)
-        {
-            state_.changeScreen(AppScreen::FileList);
-            return true;
-        }
-        return false;
-    });
-
-    screen_.Loop(root);
+    screen_.Loop(tabs);
 }

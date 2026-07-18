@@ -1,6 +1,7 @@
 #pragma once
 
 #include "services/MetadataService.hpp"
+#include "filters/FileFilter.hpp"
 #include "app/AppState.hpp"
 
 #include <ftxui/component/app.hpp>
@@ -25,6 +26,6 @@ private:
     ftxui::Component container_;
 
 public:
-    EditorScreen(AppState& state, MetadataService& metadata);
+    EditorScreen(AppState& state, MetadataService& metadata, FileFilter& filter);
     ftxui::Component GetComponent();
 };
