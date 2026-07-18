@@ -11,7 +11,7 @@
 #include <ftxui/dom/elements.hpp>
 
 EditorScreen::EditorScreen(AppState& state, MetadataService& metadata, FileFilter& filter)
-    : state_(state), metadata_(metadata)
+    : state_(state), metadata_(metadata), mode_(EditorMode::Navigation)
 {
     title_input_ = ftxui::Input(&state_.current_file.title, "Title");
     artist_input_ = ftxui::Input(&state_.current_file.artist, "Artist");
@@ -52,18 +52,54 @@ EditorScreen::EditorScreen(AppState& state, MetadataService& metadata, FileFilte
         state_.changeScreen(AppScreen::FileList);
     });
 
-    container_ = ftxui::Container::Vertical({
+    inputs_container_ = ftxui::Container::Vertical({
         title_input_,
         artist_input_,
         comment_input_,
         album_input_,
         genre_input_,
         date_input_,
-        track_number_input_,
-        ftxui::Container::Horizontal({ save_button_, cancel_button_ })
+        track_number_input_
     });
 
+    buttons_container_ = ftxui::Container::Horizontal({
+        save_button_,
+        cancel_button_
+    });
+
+    container_ = ftxui::Container::Vertical({
+        buttons_container_
+    });
+
+    save_button_->TakeFocus();
+
     auto editor_handler = ftxui::CatchEvent(container_, [this](ftxui::Event event) {
+        if (event == ftxui::Event::Character('i') &&
+            mode_ == EditorMode::Navigation)
+        {
+            mode_ = EditorMode::Editing;
+
+            container_->DetachAllChildren();
+
+            container_->Add(inputs_container_);
+
+            title_input_->TakeFocus();
+
+            return true;
+        }
+
+        if (event == ftxui::Event::Escape &&
+            mode_ == EditorMode::Editing)
+        {
+            mode_ = EditorMode::Navigation;
+
+            container_->DetachAllChildren();
+            container_->Add(buttons_container_);
+
+            save_button_->TakeFocus();
+            return true;
+        }
+
         if (event == ftxui::Event::Escape)
         {
             state_.changeScreen(AppScreen::FileList);
@@ -72,10 +108,37 @@ EditorScreen::EditorScreen(AppState& state, MetadataService& metadata, FileFilte
         return false;
     });
 
+
+
     component_ = ftxui::Renderer(editor_handler, [&] {
+        ftxui::Element help;
+
+        if (mode_ == EditorMode::Navigation)
+        {
+            help = ftxui::text(
+                "Navigation: h/k/Tab - move, Enter - select, i - edit, Esc - back"
+            ) | ftxui::center;
+        }
+        else
+        {
+            help = ftxui::text(
+                "Editing: Tab/Shift+Tab - next/previous field, Esc - navigation"
+            ) | ftxui::center;
+        }
+
         return ftxui::vbox({
             ftxui::text("Edit file: " + state_.current_file.path.filename().string()) | ftxui::bold,
+
             ftxui::separator(),
+
+            ftxui::text(
+                mode_ == EditorMode::Navigation
+                    ? "[ NORMAL ]"
+                    : "[ INSERT ]"
+            ) | ftxui::bold | ftxui::center,
+
+            ftxui::separator(),
+
             ftxui::hbox(ftxui::text("Title:          "), title_input_->Render()) | ftxui::border,
             ftxui::hbox(ftxui::text("Artist:         "), artist_input_->Render()) | ftxui::border,
             ftxui::hbox(ftxui::text("Comment:        "), comment_input_->Render()) | ftxui::border,
@@ -84,13 +147,17 @@ EditorScreen::EditorScreen(AppState& state, MetadataService& metadata, FileFilte
             ftxui::hbox(ftxui::text("Date:           "), date_input_->Render()) | ftxui::border,
             ftxui::hbox(ftxui::text("Track number:   "), track_number_input_->Render()) | ftxui::border,
 
-            ftxui::vbox({
-                ftxui::hbox({
-                    save_button_->Render(),
-                    ftxui::text("    "),
-                    cancel_button_->Render()
-                })
-            }) | ftxui::center
+            ftxui::separator(),
+
+            ftxui::hbox({
+                save_button_->Render(),
+                ftxui::text("    "),
+                cancel_button_->Render()
+            }) | ftxui::center,
+
+            ftxui::separator(),
+
+            help
         }) | ftxui::border;
     });
 
