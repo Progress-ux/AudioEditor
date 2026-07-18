@@ -40,6 +40,8 @@ FetchContent_Declare(spdlog
 message(STATUS "[FetchContent] Fetching and making dependencies available...")
 FetchContent_MakeAvailable(ftxui Catch2 CLI11 spdlog)
 
+find_package(Boost REQUIRED CONFIG COMPONENTS locale)
+
 if(WIN32)
     find_package(ZLIB REQUIRED)
     find_package(taglib CONFIG REQUIRED)
@@ -56,10 +58,16 @@ message(STATUS "  - Libs:     ${TAGLIB_LIBRARIES}")
 add_library(editor_core
     src/services/MetadataService.cpp
     src/services/FileScanner.cpp
+
+    src/filters/FileFilter.cpp
+    src/utils/Utils.cpp
 )
 target_include_directories(editor_core PUBLIC src)
 
-target_link_libraries(editor_core PUBLIC spdlog::spdlog_header_only)
+target_link_libraries(editor_core PUBLIC 
+    spdlog::spdlog_header_only
+    Boost::locale
+)
 
 if(WIN32)
     target_link_libraries(editor_core PUBLIC TagLib::tag)
@@ -91,6 +99,7 @@ if(CMAKE_TESTING_ENABLED)
         tests/test_main.cpp
         tests/test_metadata.cpp
         tests/test_scanner.cpp
+        tests/test_filter.cpp
     )
 
     target_link_libraries(unit_tests PRIVATE
